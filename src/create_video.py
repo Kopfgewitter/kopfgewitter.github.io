@@ -3,7 +3,6 @@ from datetime import datetime
 from pathlib import Path
 
 PEXELS_API_KEY = os.environ["PEXELS_API_KEY"]
-WATERMARK_TEXT = os.environ.get("WATERMARK_TEXT", "Kopfgewitter")
 
 VIDEO_TERMS = [
     "woman crying emotional close up",
@@ -39,22 +38,13 @@ def download_background_video(output_path, duration):
     print(f"✅ Hintergrundvideo: {output_path}")
     return output_path
 
-def create_video(background_path, audio_path, subtitles_path, output_path, duration):
+def create_video(background_path, audio_path, output_path, duration):
     print("🎞️ Erstelle Video mit FFmpeg...")
     
     vf = (
         "scale=1080:1920:force_original_aspect_ratio=increase,"
         "crop=1080:1920,"
-        "eq=brightness=-0.05:contrast=1.1,"
-        "subtitles=" + subtitles_path + ":force_style="
-        "'FontName=Arial,FontSize=80,Bold=1,"
-        "PrimaryColour=&HFFFFFF,OutlineColour=&H000000,"
-        "BorderStyle=1,Outline=4,Shadow=2,"
-        "Alignment=2,MarginL=50,MarginR=50,MarginV=500',"
-        "drawtext=text='" + WATERMARK_TEXT + "':"
-        "fontfile=/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf:"
-        "fontsize=52:fontcolor=white@0.6:x=(w-text_w)/2:y=80:"
-        "shadowcolor=black@0.5:shadowx=2:shadowy=2"
+        "eq=brightness=-0.05:contrast=1.1"
     )
 
     cmd = [
@@ -86,7 +76,6 @@ if __name__ == "__main__":
     create_video(
         f"output/background_{today}.mp4",
         f"output/voice_{today}.mp3",
-        f"output/subtitles_{today}.ass",
         f"output/final_{today}.mp4",
         duration
     )
