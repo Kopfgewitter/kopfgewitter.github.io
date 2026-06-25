@@ -5,8 +5,16 @@ from pathlib import Path
 PEXELS_API_KEY = os.environ["PEXELS_API_KEY"]
 WATERMARK_TEXT = os.environ.get("WATERMARK_TEXT", "Kopfgewitter")
 
-VIDEO_TERMS = ["woman thinking emotional","person sad window rain","lonely person city night",
-    "woman portrait cinematic","microphone speaking emotional","couple apart silhouette"]
+VIDEO_TERMS = [
+    "woman crying emotional close up",
+    "person walking alone rain",
+    "couple breaking up emotional",
+    "woman looking window sad",
+    "man emotional breakdown crying",
+    "person sitting alone night",
+    "emotional woman portrait tears",
+    "cinematic emotional people",
+]
 
 def download_background_video(output_path, duration):
     term = random.choice(VIDEO_TERMS)
@@ -37,26 +45,7 @@ def create_video(background_path, audio_path, subtitles_path, output_path, durat
         "-filter_complex",
         f"[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
         f"eq=brightness=-0.05:contrast=1.1,"
-        f"subtitles={subtitles_path}:force_style='FontName=Arial Black,FontSize=78,Bold=1,"
-        f"PrimaryColour=&HFFFFFF,OutlineColour=&H000000,BorderStyle=1,Outline=4,Shadow=2,Alignment=5,MarginV=600',"
+        f"subtitles={subtitles_path}:force_style='FontName=Arial Black,FontSize=80,Bold=1,"
+        f"PrimaryColour=&HFFFFFF,OutlineColour=&H000000,BorderStyle=1,Outline=4,Shadow=2,"
+        f"Alignment=2,MarginL=50,MarginR=50,MarginV=300',"
         f"drawtext=text='{WATERMARK_TEXT}':fontfile=/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf:"
-        f"fontsize=52:fontcolor=white@0.6:x=(w-text_w)/2:y=h*0.38:shadowcolor=black@0.5:shadowx=2:shadowy=2[v]",
-        "-map", "[v]", "-map", "1:a",
-        "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-        "-c:a", "aac", "-b:a", "192k", "-ar", "44100",
-        "-t", str(duration), "-movflags", "+faststart", "-pix_fmt", "yuv420p", output_path]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(result.stderr)
-        raise Exception("FFmpeg fehlgeschlagen")
-    size = Path(output_path).stat().st_size / (1024 * 1024)
-    print(f"✅ Video: {output_path} ({size:.1f} MB)")
-    return output_path
-
-if __name__ == "__main__":
-    today = datetime.now().strftime("%Y-%m-%d")
-    from generate_voice import get_audio_duration
-    duration = get_audio_duration(f"output/voice_{today}.mp3")
-    download_background_video(f"output/background_{today}.mp4", duration)
-    create_video(f"output/background_{today}.mp4", f"output/voice_{today}.mp3",
-        f"output/subtitles_{today}.ass", f"output/final_{today}.mp4", duration)
