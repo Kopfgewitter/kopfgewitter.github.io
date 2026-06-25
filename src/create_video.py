@@ -46,7 +46,7 @@ def create_video(background_path, audio_path, subtitles_path, output_path, durat
         f"FontName=Arial Black,FontSize=80,Bold=1,"
         f"PrimaryColour=&HFFFFFF,OutlineColour=&H000000,"
         f"BorderStyle=1,Outline=4,Shadow=2,"
-        f"Alignment=2,MarginL=50,MarginR=50,MarginV=300'"
+        f"Alignment=2,MarginL=50,MarginR=50,MarginV=500',"
     )
     watermark_filter = (
         f"drawtext=text='{WATERMARK_TEXT}':"
