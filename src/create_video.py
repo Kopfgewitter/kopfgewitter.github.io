@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 PEXELS_API_KEY = os.environ["PEXELS_API_KEY"]
-CACHE_PATH = "output/used_videos.json"
+CACHE_PATH = "output/used_photos.json"
 
 PHOTO_TERMS = [
     "woman crying emotional",
@@ -87,7 +87,6 @@ def download_photos(output_dir, count):
 def create_video(photo_dir, audio_path, output_path, duration):
     print("🎞️ Erstelle Slideshow...")
 
-    # Fotos laden
     photo_paths = sorted(Path(photo_dir).glob("photo_*.jpg"))
     if not photo_paths:
         raise Exception("Keine Fotos gefunden")
@@ -96,13 +95,17 @@ def create_video(photo_dir, audio_path, output_path, duration):
     seconds_per_photo = duration / count
     print(f"📸 {count} Fotos, je {seconds_per_photo:.1f}s")
 
-    # Concat filter für Slideshow bauen
+    # Input args für alle Fotos
+    input_args = []
+    for p in photo_paths:
+        input_args += ["-loop", "1", "-t", str(seconds_per_photo), "-i", str(p)]
+
+    # Filter: scale + crop für jedes Bild, dann concat
     filter_parts = []
     for i in range(count):
         filter_parts.append(
             f"[{i}:v]scale=1080:1920:force_original_aspect_ratio=increase,"
             f"crop=1080:1920,"
-            f"zoompan=z='min(zoom+0.0015,1.3)':d={int(seconds_per_photo*25)}:s=1080x1920,"
             f"eq=brightness=-0.05:contrast=1.1,"
             f"setsar=1,fps=25[v{i}]"
         )
@@ -110,11 +113,6 @@ def create_video(photo_dir, audio_path, output_path, duration):
     filter_str = ";".join(filter_parts)
     concat_inputs = "".join([f"[v{i}]" for i in range(count)])
     filter_str += f";{concat_inputs}concat=n={count}:v=1:a=0[outv]"
-
-    # Input args für alle Fotos
-    input_args = []
-    for p in photo_paths:
-        input_args += ["-loop", "1", "-t", str(seconds_per_photo), "-i", str(p)]
 
     cmd = [
         "ffmpeg", "-y",
