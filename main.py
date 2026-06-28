@@ -17,7 +17,7 @@ from create_video import download_background_video, create_video
 bg_path = f"output/background_{today}.mp4"
 download_background_video(bg_path, duration)
 final_path = f"output/final_{today}.mp4"
-create_video(bg_path, audio_path, final_path, duration, timestamps_path=timestamps_path)
+create_video(bg_path, audio_path, final_path, duration, timestamps_path=timestamps_path, text_data=text_data)
 from post_tiktok import generate_caption, post_to_tiktok
 caption = generate_caption(text_data)
 try:
