@@ -88,7 +88,6 @@ def download_background_video(output_path, duration):
     if not all_videos:
         raise Exception("Keine Videos gefunden")
 
-    # Duplikate entfernen
     seen_ids = set()
     unique_videos = []
     for v in all_videos:
@@ -98,17 +97,13 @@ def download_background_video(output_path, duration):
 
     print(f"📦 {len(unique_videos)} einzigartige Videos gefunden (Pexels + Pixabay)")
 
-    # Cache filtern
     fresh_videos = [v for v in unique_videos if v["id"] not in cache]
     if not fresh_videos:
         print("⚠️ Cache geleert")
         cache = []
         fresh_videos = unique_videos
 
-    # Zufällig aus Top 10 wählen
     video = random.choice(fresh_videos[:10])
-
-    # Cache updaten
     cache.append(video["id"])
     save_cache(cache)
 
@@ -121,18 +116,12 @@ def download_background_video(output_path, duration):
     return output_path
 
 def build_subtitle_filter(timestamps, total_duration, fontsize=52):
-    """Baut FFmpeg drawtext Filter für synchrone Untertitel"""
     filters = []
-
     for i, entry in enumerate(timestamps):
         text = entry["text"]
         start = entry.get("start")
-
-        # Fallback wenn kein Timestamp
         if start is None:
             start = (i / len(timestamps)) * total_duration
-
-        # Ende = nächster Satz oder total_duration
         if i + 1 < len(timestamps):
             next_start = timestamps[i + 1].get("start")
             if next_start is None:
@@ -141,10 +130,7 @@ def build_subtitle_filter(timestamps, total_duration, fontsize=52):
         else:
             end = total_duration
 
-        # Text escapen für FFmpeg
         safe_text = text.replace("'", "\\'").replace(":", "\\:").replace(",", "\\,")
-
-        # Zeilenumbruch bei langen Sätzen (>30 Zeichen)
         if len(safe_text) > 30:
             words = safe_text.split()
             mid = len(words) // 2
@@ -162,20 +148,92 @@ def build_subtitle_filter(timestamps, total_duration, fontsize=52):
             f":enable='between(t,{start},{end})'"
         )
         filters.append(filter_str)
-
     return ",".join(filters)
 
-def create_video(background_path, audio_path, output_path, duration, timestamps_path=None):
+def create_thumbnail(video_path, output_path, hook_text):
+    """Erstellt ein Cover-Bild aus dem ersten Frame + Hook Text"""
+    print("🖼️ Erstelle Thumbnail...")
+
+    # Ersten Frame extrahieren
+    frame_path = output_path.replace(".jpg", "_frame.jpg")
+    cmd_frame = [
+        "ffmpeg", "-y",
+        "-i", video_path,
+        "-vframes", "1",
+        "-vf", "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920",
+        "-q:v", "2",
+        frame_path
+    ]
+    subprocess.run(cmd_frame, capture_output=True)
+
+    # Text vorbereiten — erste 2 Sätze als Titel
+    lines = [l.strip() for l in hook_text.split("\n") if l.strip()]
+    title_lines = lines[:2]
+
+    # Text escapen
+    def escape(t):
+        return t.replace("'", "\\'").replace(":", "\\:").replace(",", "\\,")
+
+    # Dunkles Overlay + Text drüber
+    drawtext_filters = []
+
+    # Kopfgewitter Branding oben
+    drawtext_filters.append(
+        f"drawtext=text='kopfgewitter'"
+        f":fontsize=38"
+        f":fontcolor=white@0.7"
+        f":font='Liberation Sans'"
+        f":x=(w-text_w)/2"
+        f":y=120"
+    )
+
+    # Hook Text in der Mitte
+    y_start = 750
+    for i, line in enumerate(title_lines):
+        safe_line = escape(line)
+        drawtext_filters.append(
+            f"drawtext=text='{safe_line}'"
+            f":fontsize=58"
+            f":fontcolor=white"
+            f":font='Liberation Sans'"
+            f":borderw=4"
+            f":bordercolor=black@0.8"
+            f":x=(w-text_w)/2"
+            f":y={y_start + i * 80}"
+        )
+
+    vf = (
+        f"eq=brightness=-0.15:contrast=1.1,"
+        f"drawbox=x=0:y=600:w=iw:h=400:color=black@0.5:t=fill,"
+        + ",".join(drawtext_filters)
+    )
+
+    cmd_thumb = [
+        "ffmpeg", "-y",
+        "-i", frame_path,
+        "-vf", vf,
+        "-q:v", "2",
+        output_path
+    ]
+
+    result = subprocess.run(cmd_thumb, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"⚠️ Thumbnail Fehler: {result.stderr[-500:]}")
+        return None
+
+    Path(frame_path).unlink(missing_ok=True)
+    print(f"✅ Thumbnail: {output_path}")
+    return output_path
+
+def create_video(background_path, audio_path, output_path, duration, timestamps_path=None, text_data=None):
     print("🎞️ Erstelle finales Video...")
 
-    # Timestamps laden
     timestamps = []
     if timestamps_path and Path(timestamps_path).exists():
         with open(timestamps_path, encoding="utf-8") as f:
             timestamps = json.load(f)
         print(f"✅ {len(timestamps)} Satz-Timestamps geladen")
 
-    # Video Filter bauen
     vf = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,eq=brightness=-0.05:contrast=1.1"
 
     if timestamps:
@@ -206,6 +264,12 @@ def create_video(background_path, audio_path, output_path, duration, timestamps_
 
     size = Path(output_path).stat().st_size / (1024 * 1024)
     print(f"✅ Video: {output_path} ({size:.1f} MB)")
+
+    # Thumbnail erstellen
+    if text_data:
+        thumb_path = output_path.replace(".mp4", "_thumb.jpg")
+        create_thumbnail(output_path, thumb_path, text_data.get("text", ""))
+
     return output_path
 
 if __name__ == "__main__":
