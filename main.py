@@ -40,8 +40,8 @@ video_url = upload_to_cloudinary(final_path)
 # 6. E-Mail schicken
 from notify_email import send_notification
 send_notification(text_data, video_url, caption)
-print("⏳ Warte 10 Sekunden vor Instagram-Post...")
-time.sleep(10)
+print("⏳ Warte 15 Minuten vor Instagram-Post...")
+time.sleep(900)
 
 # 7. Instagram automatisch posten
 from post_instagram import post_to_instagram
