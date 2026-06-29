@@ -1,9 +1,7 @@
 name: Taegliches Kopfgewitter Video
 on:
   schedule:
-    - cron: '0 5 * * *'   # 07:00 CEST – Morgens
-    - cron: '0 10 * * *'  # 12:00 CEST – Mittagspause
-    - cron: '0 18 * * *'  # 20:00 CEST – Abend (stärkster Slot)
+    - cron: '0 16 * * *'
   workflow_dispatch:
 jobs:
   create-and-post:
