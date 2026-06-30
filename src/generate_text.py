@@ -124,11 +124,11 @@ THEMEN_KATEGORIEN = {
 }
 
 HOOK_TYPEN = [
-    "Ein einziger Satz — so präzise dass der Zuschauer denkt du beschreibst sein Leben",
-    "Zeige eine Alltagshandlung die Schmerz ausdrückt — kein einziges emotionales Wort benutzen",
-    "Zwei Sätze die sich widersprechen — ein Gegensatz der sofort unter die Haut geht",
-    "Die eine Wahrheit die alle kennen aber niemand laut ausspricht — brutal kurz und direkt",
-    "Starte mitten in einem Moment — kein Kontext, keine Erklärung, sofort der Schmerz",
+    "Kontrast-Hook: Zwei kurze Sätze die sich direkt widersprechen — Satz 1 zeigt was du für andere tust, Satz 2 zeigt was du dafür zurückbekommst. Maximal 4 Wörter pro Satz.",
+    "Rollentausch-Hook: Du tust etwas für andere — niemand tut es für dich. Zwei Sätze, knallharter Bruch dazwischen. Keine Erklärung, nur der Fakt.",
+    "Stille-Hook: Eine Handlung die jeder kennt, gefolgt vom Fehlen der erwarteten Reaktion. Struktur: 'Du X. Niemand Y zurück.'",
+    "Realitäts-Ohrfeige: Ein Satz der eine Illusion zerstört, brutal direkt, ohne Vorwarnung. Maximal 5 Wörter.",
+    "Wiederholungs-Hook: Drei kurze Parallelsätze die das gleiche Muster zeigen, dann ein vierter Satz der bricht und wehtut.",
 ]
 
 CTAS = [
@@ -167,22 +167,32 @@ def generate_text():
 
 Thema: "{thema}"
 
-HOOK — ERSTE SEKUNDE ENTSCHEIDET ALLES:
+HOOK — ERSTE ZWEI SEKUNDEN ENTSCHEIDEN ALLES:
 Stil: {hook_typ}
-Der erste Satz muss so hart treffen dass der Finger aufhört zu scrollen.
-VERBOTEN: "Das wusstest du..." / "Wusstest du dass..." / lange Einleitungen / erklärende Sätze
-PFLICHT: Sofort mitten im Schmerz — null Warm-up
 
-ERFOLGREICHE HOOK-BEISPIELE VON TOP ACCOUNTS:
-"dein verhalten hat alles kaputt gemacht."
-"Du warst nicht die Eine. Du warst die Pause zwischen zwei Kapiteln."
-"Du schreibst. Gelesen. Keine Antwort."
+PFLICHT-STRUKTUR für den Hook (erste 1-2 Sätze):
+- Satz 1: Was DU für andere tust (max. 4 Wörter)
+- Satz 2: Was DU dafür zurückbekommst — meist: nichts (max. 4 Wörter)
+- Der Kontrast muss in unter 2 Sekunden Lesezeit erfassbar sein
+- Keine abstrakten Aussagen ("Ihr seid nichts") — nur konkrete, bildhafte Handlungen
+- Test: Würde jemand beim ersten Lesen sofort nicken? Wenn nein, neu schreiben
+
+VERBOTEN:
+- Hooks die Nachdenken erfordern um den Sinn zu verstehen
+- Mehr als 5 Wörter im ersten Satz
+- Metaphern oder bildliche Sprache im Hook (erst ab Satz 3 erlaubt)
+- "Das wusstest du..." / "Wusstest du dass..." / lange Einleitungen / erklärende Sätze
+
+ERFOLGREICHE HOOK-BEISPIELE (nachgewiesen hohe Retention):
+"Du hälst alle zusammen. Dich hält niemand."
+"Du fehlst. Aber niemand sucht dich."
 "Du gibst Ozean. Und bekommst Pfützen zurück."
+"Du schreibst. Gelesen. Keine Antwort."
 "3 Uhr nachts. Alle schlafen. Nur du nicht."
 "Er liebt dich nicht. 💔"
 
 STRUKTUR:
-1. Hook (1 Satz) — sofort der härteste Moment, null Kontext
+1. Hook (1-2 Sätze) — sofort der härteste Kontrast, null Kontext, maximal 2 Sekunden Lesezeit
 2. Aufbau (3-4 Sätze) — konkrete Alltagsbilder die jeder kennt, Wunde vertiefen
 3. Wendepunkt (1 Satz) — die brutalste Wahrheit oder die Erkenntnis die wehtut
 4. CTA: "{cta}"
@@ -197,7 +207,7 @@ POLARISIERUNGS-REGELN:
 
 TECHNISCHE REGELN:
 - 55-70 Wörter gesamt
-- Max 6 Wörter pro Satz
+- Max 6 Wörter pro Satz (außer Hook: max 4-5 Wörter)
 - Nur "du/dich" — niemals "man"
 - Jeder Satz eine eigene Zeile
 - Kein Hashtag
