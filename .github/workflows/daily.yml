@@ -5,6 +5,8 @@ on:
     - cron: '0 8 * * *'   # 10:00 CEST – Vormittag
     - cron: '0 16 * * *'  # 18:00 CEST – Abend (stärkster Slot)
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   create-and-post:
     runs-on: ubuntu-latest
