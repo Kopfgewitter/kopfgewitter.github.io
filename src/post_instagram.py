@@ -13,6 +13,13 @@ cloudinary.config(
     api_secret=os.environ["CLOUDINARY_API_SECRET"]
 )
 
+def redact_token(text):
+    """Entfernt den Access Token aus Fehlermeldungen/Logs, bevor sie gespeichert werden."""
+    text = str(text)
+    if INSTAGRAM_ACCESS_TOKEN:
+        text = text.replace(INSTAGRAM_ACCESS_TOKEN, "***REDACTED***")
+    return text
+
 def upload_to_cloudinary(video_path):
     print("☁️ Lade Video zu Cloudinary hoch...")
     result = cloudinary.uploader.upload(
@@ -41,7 +48,7 @@ def post_to_instagram(video_path, caption, video_url=None):
     })
 
     if container_r.status_code != 200:
-        raise Exception(f"Instagram Container Fehler {container_r.status_code}: {container_r.text}")
+        raise Exception(f"Instagram Container Fehler {container_r.status_code}: {redact_token(container_r.text)}")
 
     container_id = container_r.json().get("id")
     print(f"✅ Container erstellt (ID: {container_id})")
@@ -71,7 +78,7 @@ def post_to_instagram(video_path, caption, video_url=None):
     })
 
     if publish_r.status_code != 200:
-        raise Exception(f"Instagram Publish Fehler {publish_r.status_code}: {publish_r.text}")
+        raise Exception(f"Instagram Publish Fehler {publish_r.status_code}: {redact_token(publish_r.text)}")
 
     media_id = publish_r.json().get("id")
     print(f"🎉 Erfolgreich auf Instagram veröffentlicht! (ID: {media_id})")
