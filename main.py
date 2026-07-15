@@ -50,8 +50,8 @@ except Exception as e:
 with open(f"output/result_tiktok_{today}.json", "w") as f:
     json.dump(tiktok_result, f, indent=2)
 
-print("⏳ Warte 15 Minuten vor Instagram-Post...")
-time.sleep(900)
+print("⏳ Warte 5 Minuten vor Instagram-Post...")
+time.sleep(300)
 
 # 8. Instagram automatisch posten
 from post_instagram import post_to_instagram
