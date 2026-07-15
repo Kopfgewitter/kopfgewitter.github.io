@@ -27,11 +27,8 @@ final_path = f"output/final_{today}.mp4"
 create_video(bg_path, audio_path, final_path, duration, timestamps_path=timestamps_path, text_data=text_data)
 
 # 4. Caption generieren
-from post_tiktok import KATEGORIE_HASHTAGS
-kategorie = text_data.get("kategorie", "")
-hashtags = KATEGORIE_HASHTAGS.get(kategorie, "#liebeskummer #herzschmerz #zitate #gefühle #wahreworte")
-caption = f"{text_data['text']}\n\n{hashtags}"
-caption = caption[:2200]
+from post_tiktok import generate_caption, KATEGORIE_HASHTAGS
+caption = generate_caption(text_data)
 
 # 5. Zu Cloudinary hochladen
 from post_instagram import upload_to_cloudinary
@@ -40,10 +37,23 @@ video_url = upload_to_cloudinary(final_path)
 # 6. E-Mail schicken
 from notify_email import send_notification
 send_notification(text_data, video_url, caption)
+
+# 7. TikTok automatisch posten (über Zernio)
+from post_tiktok import post_to_tiktok
+try:
+    tiktok_result = post_to_tiktok(video_url, caption)
+    print(f"✅ TikTok: {tiktok_result.get('post_id', 'N/A')}")
+except Exception as e:
+    print(f"⚠️ TikTok fehlgeschlagen: {e}")
+    tiktok_result = {"success": False, "error": str(e)}
+
+with open(f"output/result_tiktok_{today}.json", "w") as f:
+    json.dump(tiktok_result, f, indent=2)
+
 print("⏳ Warte 15 Minuten vor Instagram-Post...")
 time.sleep(900)
 
-# 7. Instagram automatisch posten
+# 8. Instagram automatisch posten
 from post_instagram import post_to_instagram
 try:
     instagram_result = post_to_instagram(final_path, caption, video_url=video_url)
