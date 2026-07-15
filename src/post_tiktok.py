@@ -1,8 +1,9 @@
-import os, json, requests, time
+import os, json, requests
 from datetime import datetime
 from pathlib import Path
 
-TIKTOK_ACCESS_TOKEN = os.environ.get("TIKTOK_ACCESS_TOKEN", "")
+ZERNIO_API_KEY = os.environ["ZERNIO_API_KEY"]
+ZERNIO_TIKTOK_ACCOUNT_ID = os.environ["ZERNIO_TIKTOK_ACCOUNT_ID"]
 
 KATEGORIE_HASHTAGS = {
     "einseitige_liebe":            "#liebeskummer #herzschmerz #zitate #wahreworte #gefühle",
@@ -22,47 +23,52 @@ def generate_caption(text_data):
     caption = f"{text}\n\n{hashtags}"
     return caption[:2200]
 
-def post_to_tiktok(video_path, caption):
-    video_size = Path(video_path).stat().st_size
-    print(f"📤 TikTok Upload ({video_size/1024/1024:.1f} MB)...")
-    headers = {"Authorization": f"Bearer {TIKTOK_ACCESS_TOKEN}", "Content-Type": "application/json"}
-    init_r = requests.post("https://open.tiktokapis.com/v2/post/publish/video/init/", headers=headers,
-        json={"post_info": {"title": caption, "privacy_level": "PUBLIC_TO_EVERYONE",
-            "disable_duet": False, "disable_comment": False, "disable_stitch": False},
-            "source_info": {"source": "FILE_UPLOAD", "video_size": video_size,
-                "chunk_size": video_size, "total_chunk_count": 1}})
-    if init_r.status_code != 200:
-        raise Exception(f"TikTok Init Fehler {init_r.status_code}: {init_r.text}")
-    init_data = init_r.json()
-    publish_id = init_data["data"]["publish_id"]
-    upload_url = init_data["data"]["upload_url"]
-    print(f"✅ Upload initialisiert (ID: {publish_id})")
-    with open(video_path, "rb") as f:
-        video_data = f.read()
-    upload_r = requests.put(upload_url,
-        headers={"Content-Type": "video/mp4", "Content-Range": f"bytes 0-{video_size-1}/{video_size}",
-            "Content-Length": str(video_size)}, data=video_data)
-    if upload_r.status_code not in [200, 201, 206]:
-        raise Exception(f"Upload Fehler {upload_r.status_code}")
-    print("✅ Video hochgeladen!")
-    for attempt in range(20):
-        time.sleep(5)
-        status_r = requests.post("https://open.tiktokapis.com/v2/post/publish/status/fetch/",
-            headers=headers, json={"publish_id": publish_id})
-        if status_r.status_code == 200:
-            status = status_r.json().get("data", {}).get("status", "")
-            print(f"  Status: {status} (Versuch {attempt+1}/20)")
-            if status == "PUBLISH_COMPLETE":
-                print("🎉 Erfolgreich auf TikTok veröffentlicht!")
-                return {"success": True, "publish_id": publish_id, "status": status}
-            elif status in ["FAILED", "CANCELLED"]:
-                raise Exception(f"Fehlgeschlagen: {status}")
-    return {"success": True, "publish_id": publish_id, "status": "PENDING"}
+def post_to_tiktok(video_url, caption):
+    print("📤 TikTok Upload über Zernio...")
+
+    response = requests.post(
+        "https://zernio.com/api/v1/posts",
+        headers={
+            "Authorization": f"Bearer {ZERNIO_API_KEY}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "content": caption,
+            "mediaItems": [
+                {"type": "video", "url": video_url}
+            ],
+            "platforms": [
+                {
+                    "platform": "tiktok",
+                    "accountId": ZERNIO_TIKTOK_ACCOUNT_ID,
+                    "platformSpecificData": {
+                        "tiktokSettings": {
+                            "privacy_level": "PUBLIC_TO_EVERYONE",
+                            "allow_comment": True,
+                            "allow_duet": True,
+                            "allow_stitch": True,
+                            "content_preview_confirmed": True,
+                            "express_consent_given": True
+                        }
+                    }
+                }
+            ],
+            "publishNow": True
+        }
+    )
+
+    if response.status_code not in [200, 201]:
+        raise Exception(f"Zernio TikTok Fehler {response.status_code}: {response.text}")
+
+    result = response.json()
+    print(f"🎉 Erfolgreich auf TikTok veröffentlicht! (ID: {result.get('post', {}).get('_id', 'N/A')})")
+    return {"success": True, "post_id": result.get("post", {}).get("_id")}
 
 if __name__ == "__main__":
     today = datetime.now().strftime("%Y-%m-%d")
     with open(f"output/text_{today}.json", encoding="utf-8") as f:
         data = json.load(f)
     caption = generate_caption(data)
-    result = post_to_tiktok(f"output/final_{today}.mp4", caption)
-    print(result)
+    with open(f"output/result_instagram_{today}.json", encoding="utf-8") as f:
+        ig_result = json.load(f)
+    print("Hinweis: Für den Test brauchst du eine Cloudinary Video-URL")
