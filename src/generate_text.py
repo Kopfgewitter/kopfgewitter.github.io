@@ -1,5 +1,5 @@
 import anthropic, json, random
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
 
 THEMEN_KATEGORIEN = {
@@ -121,6 +121,56 @@ THEMEN_KATEGORIEN = {
         "wenn du lernst nein zu sagen ohne dich zu erklären",
         "wenn du merkst dass du genug bist",
     ],
+    "valentinstag_liebeskummer": [
+        "wenn Valentinstag dich daran erinnert wer nicht mehr da ist",
+        "wenn alle Herzen posten und du dich leerer fühlst als sonst",
+        "wenn der 14. Februar nur ein Tag wie jeder andere sein soll aber es nicht ist",
+        "wenn du siehst wie glücklich andere Paare heute sind",
+        "wenn Valentinstag dich an das Versprechen erinnert das nie gehalten wurde",
+    ],
+    "silvester_neuanfang": [
+        "wenn das neue Jahr beginnt aber der Schmerz vom letzten bleibt",
+        "wenn du dir wünschst loszulassen aber die Uhr einfach nur weiterläuft",
+        "wenn alle Vorsätze fassen und du dir nur wünschst wieder ganz zu sein",
+        "wenn Silvester dich daran erinnert mit wem du es letztes Jahr verbracht hast",
+        "wenn ein neues Jahr anfängt und du innerlich noch im alten feststeckst",
+    ],
+    "weihnachten_einsamkeit": [
+        "wenn alle von Familie sprechen und du dich am einsamsten fühlst",
+        "wenn Weihnachten zeigt wer wirklich für dich da ist",
+        "wenn der leere Stuhl am Tisch lauter ist als jedes Lied",
+        "wenn Feiertage dich daran erinnern was du verloren hast",
+        "wenn alle Lichter brennen aber es in dir dunkel bleibt",
+    ],
+    "muttertag_vatertag": [
+        "wenn dieser Tag an jemanden erinnert der nicht mehr anrufen kann",
+        "wenn du siehst wie andere feiern und du nur schweigst",
+        "wenn ein Feiertag zur schwersten Erinnerung des Jahres wird",
+    ],
+    "schulstart_neuanfang": [
+        "wenn ein neuer Abschnitt beginnt aber du innerlich noch nicht bereit bist",
+        "wenn alle über Neuanfänge sprechen und du dich noch am alten Ende festhältst",
+        "wenn ein neues Kapitel beginnen soll aber du das letzte nicht abgeschlossen hast",
+    ],
+}
+
+# Feiertage/Anlässe: (Monat, Tag) -> Kategorie, gilt für ±3 Tage um das Datum
+SAISONALE_ANLAESSE = {
+    (2, 14): "valentinstag_liebeskummer",
+    (12, 24): "weihnachten_einsamkeit",
+    (12, 25): "weihnachten_einsamkeit",
+    (12, 26): "weihnachten_einsamkeit",
+    (12, 31): "silvester_neuanfang",
+    (1, 1): "silvester_neuanfang",
+    (5, 12): "muttertag_vatertag",
+    (6, 15): "muttertag_vatertag",
+    (9, 1): "schulstart_neuanfang",
+}
+
+# Wochentag-Gewichtung: 0=Montag ... 6=Sonntag
+WOCHENTAG_KATEGORIEN = {
+    6: ["einsamkeit_und_overthinking", "unsichtbarkeit"],  # Sonntag – Vorabend-Melancholie
+    0: ["heilung_und_wahrheit", "selbstverlust"],          # Montag – Neuanfang-Gedanken
 }
 
 HOOK_TYPEN = [
@@ -153,8 +203,40 @@ FOLLOW_TRIGGER = [
     "Drück Folgen wenn dich das gerade trifft. 🖤",
 ]
 
+def get_saisonale_kategorie(heute=None):
+    """Prüft ob heute (±3 Tage) ein Anlass ist. Gibt Kategorie zurück oder None."""
+    if heute is None:
+        heute = date.today()
+    for (monat, tag), kategorie in SAISONALE_ANLAESSE.items():
+        try:
+            anlass_datum = date(heute.year, monat, tag)
+        except ValueError:
+            continue
+        differenz = abs((heute - anlass_datum).days)
+        if differenz <= 3:
+            return kategorie
+    return None
+
 def get_heutiges_thema():
-    kategorie = random.choice(list(THEMEN_KATEGORIEN.keys()))
+    heute = date.today()
+    wochentag = heute.weekday()
+
+    # 1. Priorität: Saisonale Anlässe (30% Chance auch an Feiertagen normalen Content zu zeigen)
+    saison_kategorie = get_saisonale_kategorie(heute)
+    if saison_kategorie and saison_kategorie in THEMEN_KATEGORIEN and random.random() < 0.7:
+        kategorie = saison_kategorie
+        thema = random.choice(THEMEN_KATEGORIEN[kategorie])
+        return kategorie, thema
+
+    # 2. Priorität: Wochentag-Gewichtung (40% Chance bevorzugte Kategorie zu nutzen)
+    if wochentag in WOCHENTAG_KATEGORIEN and random.random() < 0.4:
+        kategorie = random.choice(WOCHENTAG_KATEGORIEN[wochentag])
+        thema = random.choice(THEMEN_KATEGORIEN[kategorie])
+        return kategorie, thema
+
+    # 3. Standard: normale Kategorien (ohne saisonale, die kommen nur zu ihrer Zeit)
+    standard_kategorien = [k for k in THEMEN_KATEGORIEN.keys() if k not in SAISONALE_ANLAESSE.values()]
+    kategorie = random.choice(standard_kategorien)
     thema = random.choice(THEMEN_KATEGORIEN[kategorie])
     return kategorie, thema
 
