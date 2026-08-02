@@ -14,13 +14,20 @@ KATEGORIE_HASHTAGS = {
     "unsichtbarkeit":              "#gefühle #herzschmerz #zitate #traurig #wahreworte",
     "toxische_muster":             "#liebeskummer #beziehung #zitate #herzschmerz #trennung",
     "heilung_und_wahrheit":        "#wahreworte #zitate #gefühle #sprüche #herzschmerz",
+    "valentinstag_liebeskummer":   "#valentinstag #liebeskummer #zitate #herzschmerz #wahreworte",
+    "silvester_neuanfang":         "#silvester #neuanfang #zitate #wahreworte #gefühle",
+    "weihnachten_einsamkeit":      "#weihnachten #einsamkeit #zitate #gefühle #wahreworte",
+    "muttertag_vatertag":          "#zitate #gefühle #wahreworte #vermissen #herzschmerz",
+    "schulstart_neuanfang":        "#neuanfang #zitate #gefühle #wahreworte #sprüche",
 }
+
+AI_HINWEIS = "\n\n🤖 Text & Stimme KI-generiert"
 
 def generate_caption(text_data):
     text = text_data["text"]
     kategorie = text_data.get("kategorie", "")
     hashtags = KATEGORIE_HASHTAGS.get(kategorie, "#liebeskummer #herzschmerz #zitate #gefühle #wahreworte")
-    caption = f"{text}\n\n{hashtags}"
+    caption = f"{text}\n\n{hashtags}{AI_HINWEIS}"
     return caption[:2200]
 
 def post_to_tiktok(video_url, caption):
@@ -40,19 +47,18 @@ def post_to_tiktok(video_url, caption):
             "platforms": [
                 {
                     "platform": "tiktok",
-                    "accountId": ZERNIO_TIKTOK_ACCOUNT_ID,
-                    "platformSpecificData": {
-                        "tiktokSettings": {
-                            "privacy_level": "PUBLIC_TO_EVERYONE",
-                            "allow_comment": True,
-                            "allow_duet": True,
-                            "allow_stitch": True,
-                            "content_preview_confirmed": True,
-                            "express_consent_given": True
-                        }
-                    }
+                    "accountId": ZERNIO_TIKTOK_ACCOUNT_ID
                 }
             ],
+            "tiktokSettings": {
+                "privacy_level": "PUBLIC_TO_EVERYONE",
+                "allow_comment": True,
+                "allow_duet": True,
+                "allow_stitch": True,
+                "content_preview_confirmed": True,
+                "express_consent_given": True,
+                "video_made_with_ai": True
+            },
             "publishNow": True
         }
     )
@@ -69,6 +75,4 @@ if __name__ == "__main__":
     with open(f"output/text_{today}.json", encoding="utf-8") as f:
         data = json.load(f)
     caption = generate_caption(data)
-    with open(f"output/result_instagram_{today}.json", encoding="utf-8") as f:
-        ig_result = json.load(f)
     print("Hinweis: Für den Test brauchst du eine Cloudinary Video-URL")
